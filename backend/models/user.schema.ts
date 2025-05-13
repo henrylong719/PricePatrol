@@ -12,7 +12,6 @@ const userSchema = new mongoose.Schema<IUser>(
       type: String,
       required: true,
       unique: true,
-      index: true,
       validate: {
         validator: function (v: string) {
           return /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/i.test(v); // Case-insensitive email validation
@@ -79,9 +78,6 @@ userSchema.pre('save', async function (next) {
 
   next();
 });
-
-// Explicitly creating additional indexes if needed
-userSchema.index({ email: 1 });
 
 const User: Model<IUser> = mongoose.model<IUser>('User', userSchema);
 

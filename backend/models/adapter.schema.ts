@@ -12,6 +12,7 @@ const adapterSchema = new mongoose.Schema<IAdapter>(
   },
   { timestamps: true }
 );
+
 adapterSchema.index({ domain: 1, createdBy: 1, type: 1 }, { unique: true });
 
 const Adapter: Model<IAdapter> = mongoose.model('Adapter', adapterSchema);
