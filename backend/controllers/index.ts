@@ -12,3 +12,10 @@ export {
   updateWatch,
   deleteWatch,
 } from './watch.controller';
+
+export {
+  getAdapters,
+  createAdapter,
+  updateAdapter,
+  deleteAdapter,
+} from './adapter.controller';

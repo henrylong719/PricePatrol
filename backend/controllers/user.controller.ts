@@ -103,11 +103,7 @@ const getUserProfile = asyncHandler(async (req: any, res: Response) => {
     throw new Error('User not found');
   }
 
-  const user = await User.findById(req.user._id).populate({
-    path: 'likedProducts',
-    select: '_id images name price location likedByUsers',
-  });
-
+  const user = await User.findById(req.user._id);
   if (!user) {
     res.status(404);
     throw new Error('User not found');

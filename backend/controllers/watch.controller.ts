@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '../middlewares';
 import { Watch } from '../models';
+import { IWatch } from '../interfaces';
 
 /**
  * Create a new price watch for a given user.
@@ -75,26 +76,15 @@ const updateWatch = asyncHandler(async (req: any, res: Response) => {
     throw new Error('Watch not found');
   }
 
-  const {
-    url,
-    adapter,
-    targetPrice,
-    continuousDrop,
-    intervalMinutes,
-    active,
-    archived,
-  } = req.body;
-
-  if (url !== undefined) watch.url = url;
-  if (adapter !== undefined) watch.adapter = adapter;
-  if (targetPrice !== undefined) watch.targetPrice = targetPrice;
-  if (continuousDrop !== undefined) watch.continuousDrop = continuousDrop;
-  if (intervalMinutes !== undefined) {
-    watch.intervalMinutes = intervalMinutes;
-    watch.nextRunAt = new Date(Date.now() + intervalMinutes * 60000);
-  }
-  if (active !== undefined) watch.active = active;
-  if (archived !== undefined) watch.archived = archived;
+  WATCH_FIELDS.forEach((field) => {
+    if (req.body[field] !== undefined) {
+      (watch as any)[field] = req.body[field];
+      // Special case: if intervalMinutes changed, bump nextRunAt
+      if (field === 'intervalMinutes') {
+        watch.nextRunAt = new Date(Date.now() + watch.intervalMinutes * 60000);
+      }
+    }
+  });
 
   await watch.save();
   res.json(watch);
@@ -114,5 +104,15 @@ const deleteWatch = asyncHandler(async (req: any, res: Response) => {
   await watch.save();
   res.status(204).end();
 });
+
+const WATCH_FIELDS: (keyof IWatch)[] = [
+  'url',
+  'adapter',
+  'targetPrice',
+  'continuousDrop',
+  'intervalMinutes',
+  'active',
+  'archived',
+];
 
 export { createWatch, getWatches, getWatch, updateWatch, deleteWatch };
