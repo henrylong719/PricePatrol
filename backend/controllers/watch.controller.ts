@@ -1,7 +1,8 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { asyncHandler } from '../middlewares';
 import { Watch } from '../models';
 import { fetchQueue } from '../config/redis';
+import { DEFAULT_INTERVAL_MINUTES, MS_PER_MINUTE } from '../config';
 
 /**
  * Create a new price watch for a given user.
@@ -15,10 +16,10 @@ const createWatch = asyncHandler(async (req: any, res: Response) => {
     adapter,
     targetPrice,
     continuousDrop = false,
-    intervalMinutes = 1440, // default to 1 day
+    intervalMinutes = DEFAULT_INTERVAL_MINUTES, // default to 1 day
   } = req.body;
 
-  const nextRunAt = new Date(Date.now() + intervalMinutes * 60000);
+  const nextRunAt = new Date(Date.now() + intervalMinutes * MS_PER_MINUTE);
   const watch = await Watch.create({
     user: req.user._id,
     url,
@@ -33,12 +34,11 @@ const createWatch = asyncHandler(async (req: any, res: Response) => {
 
   const jobId = String(watch._id);
 
-  // enqueue repeatable fetch job for this watch
   await fetchQueue.add(
     'fetchPrice',
     { watchId: watch._id },
     {
-      delay: watch.intervalMinutes * 60000,
+      delay: watch.intervalMinutes * MS_PER_MINUTE,
       jobId,
     }
   );
@@ -90,7 +90,9 @@ const updateWatch = asyncHandler(async (req: any, res: Response) => {
     if (req.body[field] !== undefined) {
       (watch as any)[field] = req.body[field];
       if (field === 'intervalMinutes') {
-        watch.nextRunAt = new Date(Date.now() + watch.intervalMinutes * 60000);
+        watch.nextRunAt = new Date(
+          Date.now() + watch.intervalMinutes * MS_PER_MINUTE
+        );
       }
     }
   });
@@ -106,7 +108,7 @@ const updateWatch = asyncHandler(async (req: any, res: Response) => {
     'fetchPrice',
     { watchId: watch._id },
     {
-      delay: watch.intervalMinutes * 60000,
+      delay: watch.intervalMinutes * MS_PER_MINUTE,
       jobId,
     }
   );

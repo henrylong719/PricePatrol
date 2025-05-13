@@ -6,6 +6,7 @@ import { IUser } from './user.interface';
 export interface IWatch extends Document {
   user: mongoose.Types.ObjectId | IUser;
   url: string;
+  name: string;
   adapter: mongoose.Types.ObjectId; // ref to an Adapter
   targetPrice?: number; // user-set target
   continuousDrop: boolean; // true = alert on any drop

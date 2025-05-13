@@ -1,7 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
-import { connectDB, fetchQueue } from './config';
+import { connectDB, fetchQueue, MS_PER_MINUTE } from './config';
 import { errorHandler, notFound } from './middlewares';
 import { adapterRouters, devRouters, userRoutes, watchRoutes } from './routes';
 import { Watch } from './models';
@@ -37,7 +37,7 @@ app.use(errorHandler);
       'fetchPrice',
       { watchId: w._id },
       {
-        delay: w.intervalMinutes * 60000,
+        delay: w.intervalMinutes * MS_PER_MINUTE,
         jobId: String(w._id),
       }
     );

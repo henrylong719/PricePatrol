@@ -5,7 +5,7 @@ import { Watch } from './models';
 import { PriceLog } from './models';
 import adapterLoader from './utils/adapterLoader';
 import { handlePriceNotification } from './services/notification.service';
-import { connectDB } from './config';
+import { connectDB, MS_PER_MINUTE } from './config';
 
 async function bootstrap() {
   connectDB();
@@ -26,11 +26,13 @@ async function bootstrap() {
       await PriceLog.create({ watch: watch._id, price });
       await handlePriceNotification(watch, price);
 
-      watch.nextRunAt = new Date(Date.now() + watch.intervalMinutes * 60000);
+      watch.nextRunAt = new Date(
+        Date.now() + watch.intervalMinutes * MS_PER_MINUTE
+      );
       await watch.save();
       console.log(`✅  Fetched ${watch.url} @ ${price}`);
 
-      const nextDelay = watch.intervalMinutes * 60000;
+      const nextDelay = watch.intervalMinutes * MS_PER_MINUTE;
       await fetchQueue.add(
         'fetchPrice',
         { watchId: watch._id },

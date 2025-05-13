@@ -19,12 +19,12 @@ const getAdapters = asyncHandler(async (req: any, res: Response) => {
 const createAdapter = asyncHandler(async (req: any, res: Response) => {
   const { name, domain, selector, jsonEndpoint } = req.body;
 
-  // prevent duplicates
   const exists = await Adapter.findOne({
     domain,
     selector,
     createdBy: req.user._id,
   });
+
   if (exists) {
     res.status(400);
     throw new Error('Adapter already exists for this domain and selector');
