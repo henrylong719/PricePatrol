@@ -1,9 +1,10 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
-import { connectDB } from './config';
+import { connectDB, fetchQueue } from './config';
 import { errorHandler, notFound } from './middlewares';
-import { adapterRouters, userRoutes, watchRoutes } from './routes';
+import { adapterRouters, devRouters, userRoutes, watchRoutes } from './routes';
+import { Watch } from './models';
 
 dotenv.config();
 
@@ -23,10 +24,26 @@ app.get('/', (req, res) => {
 app.use('/api/users', userRoutes);
 app.use('/api/watches', watchRoutes);
 app.use('/api/adaptes', adapterRouters);
+app.use('/api/dev', devRouters);
 
 // error handling
 app.use(notFound);
 app.use(errorHandler);
+
+(async () => {
+  const existing = await Watch.find({ active: true, archived: false });
+  for (const w of existing) {
+    await fetchQueue.add(
+      'fetchPrice',
+      { watchId: w._id },
+      {
+        delay: w.intervalMinutes * 60000,
+        jobId: String(w._id),
+      }
+    );
+  }
+  console.log(`🔄  Seeded ${existing.length} repeatable jobs`);
+})();
 
 app.listen(port, () => {
   console.log(`Server running on port ${port} 🚀`);

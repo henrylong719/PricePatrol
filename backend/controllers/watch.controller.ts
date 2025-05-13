@@ -1,36 +1,24 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '../middlewares';
 import { Watch } from '../models';
-import { IWatch } from '../interfaces';
+import { fetchQueue } from '../config/redis';
 
 /**
  * Create a new price watch for a given user.
  *
- * @param {Request} req - Express request object, with body parameters:
- *   - url {string}: the product URL to monitor
- *   - adapter {string}: the ID of the adapter to use for extracting the price from the target site
- *   - targetPrice {number} (optional): notify once when the price falls below this threshold
- *   - continuousDrop {boolean} (optional): if true, send notifications on every subsequent price drop
- *   - intervalMinutes {number} (optional): polling interval in minutes (default: 1440 for daily checks)
- *
- * @param {Response} res - Express response object, returns the created Watch document
+ * @param req - Express request with body: { url, adapter, targetPrice?, continuousDrop?, intervalMinutes? }
+ * @param res - Express response, returns the created Watch document
  */
-
-// @desc    Create a new price watch
-// @route   POST /api/watches
-// @access  Private
 const createWatch = asyncHandler(async (req: any, res: Response) => {
   const {
     url,
     adapter,
     targetPrice,
     continuousDrop = false,
-    intervalMinutes = 1440, // default to 1 day (1440 minutes)
+    intervalMinutes = 1440, // default to 1 day
   } = req.body;
 
-  // schedule next run intervalMinutes later
   const nextRunAt = new Date(Date.now() + intervalMinutes * 60000);
-
   const watch = await Watch.create({
     user: req.user._id,
     url,
@@ -43,20 +31,32 @@ const createWatch = asyncHandler(async (req: any, res: Response) => {
     archived: false,
   });
 
+  const jobId = String(watch._id);
+
+  // enqueue repeatable fetch job for this watch
+  await fetchQueue.add(
+    'fetchPrice',
+    { watchId: watch._id },
+    {
+      delay: watch.intervalMinutes * 60000,
+      jobId,
+    }
+  );
+
   res.status(201).json(watch);
 });
 
-// @desc    Get all watches for current user
-// @route   GET /api/watches
-// @access  Private
+/**
+ * Get all watches for current user
+ */
 const getWatches = asyncHandler(async (req: any, res: Response) => {
   const watches = await Watch.find({ user: req.user._id, archived: false });
   res.json(watches);
 });
 
-// @desc    Get single watch
-// @route   GET /api/watches/:id
-// @access  Private
+/**
+ * Get a single watch by ID
+ */
 const getWatch = asyncHandler(async (req: any, res: Response) => {
   const watch = await Watch.findOne({ _id: req.params.id, user: req.user._id });
   if (!watch) {
@@ -66,9 +66,9 @@ const getWatch = asyncHandler(async (req: any, res: Response) => {
   res.json(watch);
 });
 
-// @desc    Update a watch
-// @route   PUT /api/watches/:id
-// @access  Private
+/**
+ * Update a watch and reschedule its fetch job
+ */
 const updateWatch = asyncHandler(async (req: any, res: Response) => {
   const watch = await Watch.findOne({ _id: req.params.id, user: req.user._id });
   if (!watch) {
@@ -76,10 +76,19 @@ const updateWatch = asyncHandler(async (req: any, res: Response) => {
     throw new Error('Watch not found');
   }
 
-  WATCH_FIELDS.forEach((field) => {
+  const updatableFields: (keyof typeof req.body)[] = [
+    'url',
+    'adapter',
+    'targetPrice',
+    'continuousDrop',
+    'intervalMinutes',
+    'active',
+    'archived',
+  ];
+
+  updatableFields.forEach((field) => {
     if (req.body[field] !== undefined) {
       (watch as any)[field] = req.body[field];
-      // Special case: if intervalMinutes changed, bump nextRunAt
       if (field === 'intervalMinutes') {
         watch.nextRunAt = new Date(Date.now() + watch.intervalMinutes * 60000);
       }
@@ -87,12 +96,27 @@ const updateWatch = asyncHandler(async (req: any, res: Response) => {
   });
 
   await watch.save();
+
+  // remove existing repeatable job using BullMQ v5 API
+  const jobId = String(watch._id);
+  await fetchQueue.removeJobScheduler(jobId);
+
+  // enqueue updated repeatable job
+  await fetchQueue.add(
+    'fetchPrice',
+    { watchId: watch._id },
+    {
+      delay: watch.intervalMinutes * 60000,
+      jobId,
+    }
+  );
+
   res.json(watch);
 });
 
-// @desc    Delete (archive) a watch
-// @route   DELETE /api/watches/:id
-// @access  Private
+/**
+ * Archive (soft-delete) a watch and remove its scheduled job
+ */
 const deleteWatch = asyncHandler(async (req: any, res: Response) => {
   const watch = await Watch.findOne({ _id: req.params.id, user: req.user._id });
   if (!watch) {
@@ -102,17 +126,12 @@ const deleteWatch = asyncHandler(async (req: any, res: Response) => {
 
   watch.archived = true;
   await watch.save();
+
+  // remove scheduled repeatable job
+  const jobId = String(watch._id);
+  await fetchQueue.removeJobScheduler(jobId);
+
   res.status(204).end();
 });
-
-const WATCH_FIELDS: (keyof IWatch)[] = [
-  'url',
-  'adapter',
-  'targetPrice',
-  'continuousDrop',
-  'intervalMinutes',
-  'active',
-  'archived',
-];
 
 export { createWatch, getWatches, getWatch, updateWatch, deleteWatch };
