@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser';
 import { connectDB } from './config';
 import { errorHandler, notFound } from './middlewares';
 import { userRoutes } from './routes';
+import watchRoutes from './routes/watch.route';
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/users', userRoutes);
+app.use('/api/watches', watchRoutes);
 
 // error handling
 app.use(notFound);
