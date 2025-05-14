@@ -7,82 +7,102 @@ import { IAdapter } from '../interfaces';
 // @route   GET /api/adapters
 // @access  Private
 const getAdapters = asyncHandler(async (req: any, res: Response) => {
-  const adapters = await Adapter.find({
-    $or: [{ type: 'builtin' }, { createdBy: req.user._id }],
-  }).sort({ domain: 1 });
-  res.json(adapters);
+  try {
+    const adapters = await Adapter.find({
+      $or: [{ type: 'builtin' }, { createdBy: req.user._id }],
+    }).sort({ domain: 1 });
+    res.json(adapters);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
 });
 
 // @desc    Create a new custom adapter
 // @route   POST /api/adapters
 // @access  Private
 const createAdapter = asyncHandler(async (req: any, res: Response) => {
-  const { name, domain, selector, jsonEndpoint } = req.body;
+  try {
+    const { name, domain, selector, jsonEndpoint } = req.body;
 
-  const exists = await Adapter.findOne({
-    domain,
-    selector,
-    createdBy: req.user._id,
-  });
+    const exists = await Adapter.findOne({
+      domain,
+      selector,
+      createdBy: req.user._id,
+    });
 
-  if (exists) {
-    res.status(400);
-    throw new Error('Adapter already exists for this domain and selector');
+    if (exists) {
+      res.status(400);
+      throw new Error('Adapter already exists for this domain and selector');
+    }
+
+    const adapter = await Adapter.create({
+      name,
+      domain,
+      type: 'custom',
+      selector,
+      jsonEndpoint,
+      createdBy: req.user._id,
+    });
+
+    res.status(201).json(adapter);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
   }
-
-  const adapter = await Adapter.create({
-    name,
-    domain,
-    type: 'custom',
-    selector,
-    jsonEndpoint,
-    createdBy: req.user._id,
-  });
-
-  res.status(201).json(adapter);
 });
 
 // @desc    Update custom adapter
 // @route   PUT /api/adapters/:id
 // @access  Private
 const updateAdapter = asyncHandler(async (req: any, res: Response) => {
-  const adapter = await Adapter.findOne({
-    _id: req.params.id,
-    createdBy: req.user._id,
-  });
-  if (!adapter) {
-    res.status(404);
-    throw new Error('Adapter not found');
-  }
-
-  ADAPTER_FIELDS.forEach((field) => {
-    if (req.body[field] !== undefined) {
-      (adapter as any)[field] = req.body[field];
+  try {
+    const adapter = await Adapter.findOne({
+      _id: req.params.id,
+      createdBy: req.user._id,
+    });
+    if (!adapter) {
+      res.status(404);
+      throw new Error('Adapter not found');
     }
-  });
 
-  await adapter.save();
-  res.json(adapter);
+    const ADAPTER_FIELDS: (keyof IAdapter)[] = [
+      'name',
+      'selector',
+      'jsonEndpoint',
+    ];
+
+    ADAPTER_FIELDS.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        (adapter as any)[field] = req.body[field];
+      }
+    });
+
+    await adapter.save();
+    res.json(adapter);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
 });
 
 // @desc    Delete (archive) custom adapter
 // @route   DELETE /api/adapters/:id
 // @access  Private
 const deleteAdapter = asyncHandler(async (req: any, res: Response) => {
-  const adapter = await Adapter.findOne({
-    _id: req.params.id,
-    createdBy: req.user._id,
-  });
-  if (!adapter) {
-    res.status(404);
-    throw new Error('Adapter not found');
+  try {
+    const adapter = await Adapter.findOne({
+      _id: req.params.id,
+      createdBy: req.user._id,
+    });
+    if (!adapter) {
+      res.status(404);
+      throw new Error('Adapter not found');
+    }
+
+    // soft-delete or remove
+    await adapter.deleteOne();
+    res.status(204).end();
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
   }
-
-  // soft-delete or remove
-  await adapter.deleteOne();
-  res.status(204).end();
 });
-
-const ADAPTER_FIELDS: (keyof IAdapter)[] = ['name', 'selector', 'jsonEndpoint'];
 
 export { getAdapters, createAdapter, updateAdapter, deleteAdapter };

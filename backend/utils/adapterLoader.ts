@@ -1,6 +1,11 @@
-import { AmazonAdapter } from '../adapters/amazonAdapter';
-import { ChemistWarehouseAdapter } from '../adapters/chemistWarehouseAdapter';
-import { GenericCheerioAdapter } from '../adapters/genericCheerioAdapter';
+import {
+  // ColesAdapter,
+  // WoolworthsAdapter,
+  AmazonAdapter,
+  ChemistWarehouseAdapter,
+  GenericCheerioAdapter,
+  RMWilliamsAdapter,
+} from '../adapters';
 import { Adapter } from '../models';
 
 export default async function adapterLoader(adapterId: string) {
@@ -11,8 +16,14 @@ export default async function adapterLoader(adapterId: string) {
     switch (doc.name) {
       case 'ChemistWarehouse':
         return new ChemistWarehouseAdapter();
-      case 'amazon':
+      case 'Amazon':
         return new AmazonAdapter();
+      // case 'Coles':
+      //   return new ColesAdapter();
+      // case 'Woolworths':
+      // return new WoolworthsAdapter();
+      case 'RMWilliams':
+        return new RMWilliamsAdapter();
       default:
         throw new Error(`Unknown builtin adapter: ${doc.name}`);
     }

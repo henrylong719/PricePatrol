@@ -1,6 +1,6 @@
 // backend/adapters/AmazonAdapter.ts
 import { BasePlaywrightAdapter } from './basePlaywrightAdapter';
-import { chromium, BrowserContext } from 'playwright';
+import { BrowserContext } from 'playwright';
 
 export class AmazonAdapter extends BasePlaywrightAdapter {
   // Fallback selectors list (unused since extractPrice is overridden)
@@ -26,22 +26,15 @@ export class AmazonAdapter extends BasePlaywrightAdapter {
 
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60_000 });
 
-    // Selectors for whole-dollar and fraction parts
-    const whole = await page.$eval(
-      '.a-price-whole',
-      (el) => el.textContent?.trim() || '0'
-    );
-    const fraction = await page.$eval(
-      '.a-price-fraction',
-      (el) => el.textContent?.trim() || '00'
+    const raw = await page.$eval(
+      '.a-price .a-offscreen',
+      (el) => el.textContent?.trim() || '0.00'
     );
 
-    await page.close();
-    await context.close();
+    const cleaned = raw.replace(/[^0-9.]/g, '');
 
-    const raw = `${whole}.${fraction}`;
-    // parse e.g. "37.47"
-    const value = parseFloat(raw.replace(/,/g, ''));
+    const value = parseFloat(cleaned);
+
     if (isNaN(value)) {
       throw new Error(`AmazonAdapter: unable to parse price from '${raw}'`);
     }

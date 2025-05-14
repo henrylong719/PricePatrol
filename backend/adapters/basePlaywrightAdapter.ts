@@ -1,4 +1,3 @@
-// backend/adapters/BasePlaywrightAdapter.ts
 import { chromium, Browser, BrowserContext, Page } from 'playwright';
 
 /**

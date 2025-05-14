@@ -7,9 +7,11 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "ts-node backend/server.ts",
     "server": "nodemon backend/server.ts",
-    "worker": "ts-node backend/worker.ts",
+    "worker": "nodemon backend/worker.ts",
     "client": "npm run dev --prefix frontend",
-    "dev": "concurrently \"npm run server\" \"npm run client\""
+    "dev": "concurrently \"npm run server\" \"npm run worker\" \"npm run client\"",
+    "data:import": "ts-node backend/seeder",
+    "data:destroy": "ts-node backend/seeder -d"
   },
   "repository": {
     "type": "git",
