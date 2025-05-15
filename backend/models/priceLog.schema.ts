@@ -1,4 +1,4 @@
-import mongoose, { Model, Document } from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 import { IPriceLog } from '../interfaces';
 
 const priceLogSchema = new mongoose.Schema<IPriceLog>(
@@ -21,10 +21,10 @@ const priceLogSchema = new mongoose.Schema<IPriceLog>(
   { timestamps: false }
 );
 
-// 1) TTL index on fetchedAt – expire logs after 90 days
+// 1) TTL index on fetchedAt – expire logs after 1 year
 priceLogSchema.index(
   { fetchedAt: 1 },
-  { expireAfterSeconds: 60 * 60 * 24 * 90 }
+  { expireAfterSeconds: 60 * 60 * 24 * 365 }
 );
 
 // 2) Compound index for history queries sorted by time
