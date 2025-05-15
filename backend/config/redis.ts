@@ -6,6 +6,6 @@ export const redisConnection = new IORedis(process.env.REDIS_URL!, {
   maxRetriesPerRequest: null,
 });
 
-export const fetchQueue = new Queue('priceFetch', {
+export const fetchQueue = new Queue('fetchPrice', {
   connection: redisConnection,
 });
