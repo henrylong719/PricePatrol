@@ -1,5 +1,6 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import { PriceData } from './basePlaywrightAdapter';
 
 export abstract class BaseCheerioAdapter {
   /** CSS selector(s) to try, in priority order */
@@ -44,5 +45,10 @@ export abstract class BaseCheerioAdapter {
   async extractPrice(url: string): Promise<number> {
     const raw = await this.scrapePriceText(url);
     return this.parsePrice(raw);
+  }
+
+  async extractData(url: string): Promise<PriceData> {
+    const price = await this.extractPrice(url);
+    return { price, imageUrl: '' }; // no image extraction here
   }
 }

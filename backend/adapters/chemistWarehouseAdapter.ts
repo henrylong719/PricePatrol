@@ -1,4 +1,3 @@
-// backend/adapters/ChemistWarehouseAdapter.ts
 import { BasePlaywrightAdapter } from './basePlaywrightAdapter';
 
 export class ChemistWarehouseAdapter extends BasePlaywrightAdapter {
@@ -10,5 +9,10 @@ export class ChemistWarehouseAdapter extends BasePlaywrightAdapter {
     '.product-pricing__price--standard',
     '.product-price span.price',
   ];
-  protected userAgent?: string = undefined;
+
+  protected imageSelectors = [
+    'a.image_enlarger', // full-size image on the <a> href
+    '.pi_slide a.image_enlarger', // fallback
+    'img.product-thumbnail', // last ditch
+  ];
 }

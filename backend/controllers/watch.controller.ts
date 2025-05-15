@@ -1,8 +1,9 @@
 import { Response } from 'express';
 import { asyncHandler } from '../middlewares';
-import { Watch } from '../models';
+import { Adapter, Watch } from '../models';
 import { fetchQueue } from '../config/redis';
 import { DEFAULT_INTERVAL_MINUTES, MS_PER_MINUTE } from '../config';
+import adapterLoader from '../utils/adapterLoader';
 
 /**
  * Create a new price watch for a given user.
@@ -11,43 +12,45 @@ import { DEFAULT_INTERVAL_MINUTES, MS_PER_MINUTE } from '../config';
  * @param res - Express response, returns the created Watch document
  */
 const createWatch = asyncHandler(async (req: any, res: Response) => {
-  try {
-    const {
-      url,
-      adapter,
-      targetPrice,
-      continuousDrop = false,
-      intervalMinutes = DEFAULT_INTERVAL_MINUTES, // default to 1 day
-    } = req.body;
+  const {
+    url,
+    adapter: adapterId,
+    targetPrice,
+    continuousDrop = false,
+    intervalMinutes = DEFAULT_INTERVAL_MINUTES,
+  } = req.body;
 
-    const nextRunAt = new Date(Date.now() + intervalMinutes * MS_PER_MINUTE);
-    const watch = await Watch.create({
-      user: req.user._id,
-      url,
-      adapter,
-      targetPrice,
-      continuousDrop,
-      intervalMinutes,
-      nextRunAt,
-      active: true,
-      archived: false,
-    });
-
-    const jobId = String(watch._id);
-
-    await fetchQueue.add(
-      'fetchPrice',
-      { watchId: watch._id },
-      {
-        delay: watch.intervalMinutes * MS_PER_MINUTE,
-        jobId,
-      }
-    );
-
-    res.status(201).json(watch);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
+  const adapterDoc = await Adapter.findById(adapterId);
+  if (!adapterDoc) {
+    return res.status(404).json({ message: 'Adapter not found' });
   }
+
+  let watch = await Watch.create({
+    user: req.user._id,
+    url,
+    adapter: adapterId,
+    targetPrice,
+    continuousDrop,
+    intervalMinutes,
+  });
+
+  const scraper = await adapterLoader(adapterId);
+
+  const { imageUrl } = await scraper.extractData(url);
+
+  watch.imageUrl = imageUrl;
+  await watch.save();
+
+  const jobId = String(watch._id);
+  const delay = intervalMinutes * MS_PER_MINUTE;
+
+  await fetchQueue.add(
+    'fetchPrice', // name of the queue processor
+    { watchId: watch._id },
+    { delay, jobId }
+  );
+
+  res.status(201).json(watch);
 });
 
 /**

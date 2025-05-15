@@ -6,6 +6,7 @@ export interface IWatch extends Document {
   user: IUser;
   url: string;
   name: string;
+  imageUrl?: string;
   adapter: string; // ref to an Adapter
   targetPrice?: number; // user-set target
   continuousDrop: boolean; // true = alert on any drop

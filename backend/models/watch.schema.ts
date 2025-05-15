@@ -11,6 +11,7 @@ const watchSchema = new mongoose.Schema<IWatch>(
       required: true,
     },
     name: { type: String, required: false, trim: true, default: '' },
+    imageUrl: { type: String, default: '' },
     targetPrice: { type: Number },
     continuousDrop: { type: Boolean, default: false },
     intervalMinutes: { type: Number, default: 60 },
