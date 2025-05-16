@@ -1,23 +1,23 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
+import slugify from 'slugify';
 import { asyncHandler } from '../middlewares';
-import { Adapter, Watch } from '../models';
+import { Adapter, PriceLog, Watch } from '../models';
 import { fetchQueue } from '../config/redis';
 import { DEFAULT_INTERVAL_MINUTES, MS_PER_MINUTE } from '../config';
 import adapterLoader from '../utils/adapterLoader';
 
 /**
- * Create a new price watch for a given user.
- *
- * @param req - Express request with body: { url, adapter, targetPrice?, continuousDrop?, intervalMinutes? }
- * @param res - Express response, returns the created Watch document
+ * POST /api/watches
  */
-const createWatch = asyncHandler(async (req: any, res: Response) => {
+export const createWatch = asyncHandler(async (req: any, res: Response) => {
   const {
+    name,
     url,
     adapter: adapterId,
     targetPrice,
     continuousDrop = false,
     intervalMinutes = DEFAULT_INTERVAL_MINUTES,
+    isPublic = false,
   } = req.body;
 
   const adapterDoc = await Adapter.findById(adapterId);
@@ -25,149 +25,174 @@ const createWatch = asyncHandler(async (req: any, res: Response) => {
     return res.status(404).json({ message: 'Adapter not found' });
   }
 
+  // generate slug up front if you like, or rely on pre('validate') hook
+  const slug = slugify(name || url, { lower: true, strict: true });
+
   let watch = await Watch.create({
     user: req.user._id,
+    name,
+    slug,
     url,
     adapter: adapterId,
     targetPrice,
     continuousDrop,
     intervalMinutes,
+    isPublic,
   });
 
   const scraper = await adapterLoader(adapterId);
-
   const { imageUrl } = await scraper.extractData(url);
-
   watch.imageUrl = imageUrl;
   await watch.save();
 
   const jobId = String(watch._id);
   const delay = intervalMinutes * MS_PER_MINUTE;
-
-  await fetchQueue.add(
-    'fetchPrice', // name of the queue processor
-    { watchId: watch._id },
-    { delay, jobId }
-  );
+  await fetchQueue.add('fetchPrice', { watchId: watch._id }, { delay, jobId });
 
   res.status(201).json(watch);
 });
 
 /**
- * Get all watches for current user
+ * GET /api/watches
  */
-const getWatches = asyncHandler(async (req: any, res: Response) => {
-  try {
-    const watches = await Watch.find({ user: req.user._id, archived: false });
-    res.json(watches);
-  } catch (error: any) {
-    res.status(400);
-    throw new Error(error.message);
-  }
+export const getWatches = asyncHandler(async (req: any, res: Response) => {
+  const watches = await Watch.find({
+    user: req.user._id,
+    archived: false,
+  }).select('-__v');
+  res.json(watches);
 });
 
 /**
- * Get a single watch by ID
+ * GET /api/watches/:slug
  */
-const getWatch = asyncHandler(async (req: any, res: Response) => {
-  try {
-    const watch = await Watch.findOne({
-      _id: req.params.id,
-      user: req.user._id,
-    });
-    if (!watch) {
-      res.status(404);
-      throw new Error('Watch not found');
-    }
-    res.json(watch);
-  } catch (error: any) {
-    res.status(400);
-    throw new Error(error.message);
+export const getWatch = asyncHandler(async (req: any, res: Response) => {
+  const watch = await Watch.findOne({
+    slug: req.params.slug,
+    user: req.user._id,
+  }).lean();
+  if (!watch) {
+    return res.status(404).json({ message: 'Watch not found' });
   }
+
+  // fetch latest price
+  const latestLog = await PriceLog.findOne({ watch: watch._id })
+    .sort({ fetchedAt: -1 })
+    .select('price fetchedAt')
+    .lean();
+
+  res.json({
+    ...watch,
+    latestPrice: latestLog?.price ?? null,
+    fetchedAt: latestLog?.fetchedAt ?? null,
+  });
 });
 
 /**
- * Update a watch and reschedule its fetch job
+ * PUT /api/watches/:slug
  */
-const updateWatch = asyncHandler(async (req: any, res: Response) => {
-  try {
-    const watch = await Watch.findOne({
-      _id: req.params.id,
-      user: req.user._id,
-    });
-    if (!watch) {
-      res.status(404);
-      throw new Error('Watch not found');
-    }
+export const updateWatch = asyncHandler(async (req: any, res: Response) => {
+  const watch = await Watch.findOne({
+    slug: req.params.slug,
+    user: req.user._id,
+  });
+  if (!watch) {
+    return res.status(404).json({ message: 'Watch not found' });
+  }
 
-    const updatableFields: (keyof typeof req.body)[] = [
-      'url',
-      'adapter',
-      'targetPrice',
-      'continuousDrop',
-      'intervalMinutes',
-      'active',
-      'archived',
-    ];
-
-    updatableFields.forEach((field) => {
-      if (req.body[field] !== undefined) {
-        (watch as any)[field] = req.body[field];
-        if (field === 'intervalMinutes') {
-          watch.nextRunAt = new Date(
-            Date.now() + watch.intervalMinutes * MS_PER_MINUTE
-          );
-        }
+  const fields: (keyof typeof req.body)[] = [
+    'name',
+    'url',
+    'adapter',
+    'targetPrice',
+    'continuousDrop',
+    'intervalMinutes',
+    'active',
+    'archived',
+    'isPublic',
+  ];
+  fields.forEach((f) => {
+    if (req.body[f] !== undefined) {
+      (watch as any)[f] = req.body[f];
+      if (f === 'name') {
+        watch.slug = slugify(req.body.name, { lower: true, strict: true });
       }
-    });
-
-    await watch.save();
-
-    // remove existing repeatable job using BullMQ v5 API
-    const jobId = String(watch._id);
-    await fetchQueue.removeJobScheduler(jobId);
-
-    // enqueue updated repeatable job
-    await fetchQueue.add(
-      'fetchPrice',
-      { watchId: watch._id },
-      {
-        delay: watch.intervalMinutes * MS_PER_MINUTE,
-        jobId,
+      if (f === 'intervalMinutes') {
+        watch.nextRunAt = new Date(
+          Date.now() + watch.intervalMinutes * MS_PER_MINUTE
+        );
       }
-    );
+    }
+  });
+  await watch.save();
 
-    res.json(watch);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
-  }
+  // reschedule job
+  const jobId = String(watch._id);
+  await fetchQueue.removeJobScheduler(jobId);
+  await fetchQueue.add(
+    'fetchPrice',
+    { watchId: watch._id },
+    {
+      delay: watch.intervalMinutes * MS_PER_MINUTE,
+      jobId,
+    }
+  );
+
+  res.json(watch);
 });
 
 /**
- * Archive (soft-delete) a watch and remove its scheduled job
+ * DELETE /api/watches/:slug
  */
-const deleteWatch = asyncHandler(async (req: any, res: Response) => {
-  try {
-    const watch = await Watch.findOne({
-      _id: req.params.id,
-      user: req.user._id,
-    });
-    if (!watch) {
-      res.status(404);
-      throw new Error('Watch not found');
-    }
-
-    watch.archived = true;
-    await watch.save();
-
-    // remove scheduled repeatable job
-    const jobId = String(watch._id);
-    await fetchQueue.removeJobScheduler(jobId);
-
-    res.status(204).end();
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
+export const deleteWatch = asyncHandler(async (req: any, res: Response) => {
+  const watch = await Watch.findOne({
+    slug: req.params.slug,
+    user: req.user._id,
+  });
+  if (!watch) {
+    return res.status(404).json({ message: 'Watch not found' });
   }
+
+  watch.archived = true;
+  await watch.save();
+  await fetchQueue.removeJobScheduler(String(watch._id));
+
+  res.status(204).end();
 });
 
-export { createWatch, getWatches, getWatch, updateWatch, deleteWatch };
+/**
+ * GET /api/public-watches
+ */
+export const getPublicWatches = asyncHandler(async (_req, res: Response) => {
+  const watches = await Watch.aggregate([
+    { $match: { isPublic: true, active: true, archived: false } },
+    {
+      $lookup: {
+        from: 'pricelogs',
+        let: { watchId: '$_id' },
+        pipeline: [
+          { $match: { $expr: { $eq: ['$watch', '$$watchId'] } } },
+          { $sort: { fetchedAt: -1 } },
+          { $limit: 1 },
+        ],
+        as: 'latestLog',
+      },
+    },
+    { $unwind: { path: '$latestLog', preserveNullAndEmptyArrays: true } },
+    {
+      $project: {
+        name: 1,
+        slug: 1,
+        imageUrl: 1,
+        url: 1,
+        targetPrice: 1,
+        latestPrice: '$latestLog.price',
+        fetchedAt: '$latestLog.fetchedAt',
+      },
+    },
+    { $sort: { fetchedAt: -1 } },
+    { $limit: 50 },
+  ]);
+
+  res.json(watches);
+});

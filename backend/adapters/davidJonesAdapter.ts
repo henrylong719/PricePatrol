@@ -1,5 +1,4 @@
-// backend/adapters/davidJonesAdapter.ts
-import { chromium, BrowserContext, Page } from 'playwright';
+import { BrowserContext, Page } from 'playwright';
 import { BasePlaywrightAdapter, PriceData } from './basePlaywrightAdapter';
 
 export class DavidJonesAdapter extends BasePlaywrightAdapter {
@@ -17,7 +16,6 @@ export class DavidJonesAdapter extends BasePlaywrightAdapter {
   ];
 
   async extractData(url: string): Promise<PriceData> {
-    /* ───────── 1. launch a “real” browser context ───────── */
     await this.initBrowser();
     const context: BrowserContext = await this.browser.newContext({
       userAgent:
@@ -33,7 +31,6 @@ export class DavidJonesAdapter extends BasePlaywrightAdapter {
     page.setDefaultTimeout(60_000);
     await page.goto(url, { waitUntil: 'networkidle' });
 
-    /* ───────── 2. politely dismiss the age-gate / overlay ───────── */
     const overlay = 'button:has-text("Continue"), a:has-text("Continue")';
     try {
       if (await page.isVisible(overlay)) {
@@ -46,10 +43,8 @@ export class DavidJonesAdapter extends BasePlaywrightAdapter {
       /* ignore – overlay vanished or isn’t clickable */
     }
 
-    /* ───────── 3. PRICE – selectors → JSON-LD → regex ───────── */
     let price: number | null = null;
 
-    // 3a) DOM selectors
     for (const sel of this.priceSelectors) {
       const handle = await page.$(sel);
       if (!handle) continue;
@@ -69,7 +64,7 @@ export class DavidJonesAdapter extends BasePlaywrightAdapter {
       }
     }
 
-    // 3b) script[type="application/ld+json"]
+    // script[type="application/ld+json"]
     if (price === null) {
       const blocks = await page.$$eval(
         'script[type="application/ld+json"]',
@@ -92,7 +87,7 @@ export class DavidJonesAdapter extends BasePlaywrightAdapter {
       }
     }
 
-    // 3c) brute-force regex on raw HTML
+    // brute-force regex on raw HTML
     if (price === null) {
       const html = await page.content();
       const m = html.match(/itemprop="price"[^>]*content="([\d.]+)"/);
@@ -105,7 +100,6 @@ export class DavidJonesAdapter extends BasePlaywrightAdapter {
       throw new Error(`${this.constructor.name}: price not found`);
     }
 
-    /* ───────── 4. IMAGE – first sensible anchor/img ───────── */
     let imageUrl = '';
     for (const sel of this.imageSelectors) {
       const anchor = await page.$(sel);
@@ -139,7 +133,6 @@ export class DavidJonesAdapter extends BasePlaywrightAdapter {
       imageUrl = `https://www.davidjones.com${imageUrl}`;
     }
 
-    /* ───────── 5. clean up & return ───────── */
     await page.close();
     await context.close();
     return { price, imageUrl };

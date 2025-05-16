@@ -6,14 +6,21 @@ import {
   getWatch,
   updateWatch,
   deleteWatch,
+  getPublicWatches,
 } from '../controllers/watch.controller';
 
 const router = express.Router();
 router.use(sanitizeInput);
 router.use(protect);
 
-router.route('/').post(createWatch).get(getWatches);
+// public listing
+router.get('/public-watches', getPublicWatches);
 
-router.route('/:id').get(getWatch).put(updateWatch).delete(deleteWatch);
+// watch CRUD (slug‐based)
+router.post('/watches', protect, createWatch);
+router.get('/watches', protect, getWatches);
+router.get('/watches/:slug', protect, getWatch);
+router.put('/watches/:slug', protect, updateWatch);
+router.delete('/watches/:slug', protect, deleteWatch);
 
 export default router;

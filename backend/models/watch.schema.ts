@@ -1,4 +1,5 @@
 import mongoose, { Model } from 'mongoose';
+import slugify from 'slugify';
 import { IWatch } from '../interfaces';
 
 const watchSchema = new mongoose.Schema<IWatch>(
@@ -10,20 +11,30 @@ const watchSchema = new mongoose.Schema<IWatch>(
       ref: 'Adapter',
       required: true,
     },
-    name: { type: String, required: false, trim: true, default: '' },
+    name: { type: String, trim: true, default: '' },
+    slug: { type: String, required: true, unique: true, index: true }, // ← new
     imageUrl: { type: String, default: '' },
     targetPrice: { type: Number },
     continuousDrop: { type: Boolean, default: false },
     intervalMinutes: { type: Number, default: 60 },
     lastNotifiedAt: { type: Date },
-    nextRunAt: { type: Date, index: true }, // schedule pointer for BullMQ
+    nextRunAt: { type: Date, index: true },
     active: { type: Boolean, default: true },
-    archived: { type: Boolean, default: false }, // soft-delete flag
+    archived: { type: Boolean, default: false },
+    isPublic: { type: Boolean, default: false, index: true },
   },
   { timestamps: true }
 );
-// Query watches ready to run
-watchSchema.index({ active: 1, nextRunAt: 1 });
+
+// auto‐generate or update slug when name changes
+watchSchema.pre('validate', function (next) {
+  if (this.name && this.isModified('name')) {
+    this.slug = slugify(this.name, { lower: true, strict: true });
+  }
+  next();
+});
+
+watchSchema.index({ isPublic: 1, active: 1, nextRunAt: 1 });
 
 const Watch: Model<IWatch> = mongoose.model('Watch', watchSchema);
 export default Watch;
