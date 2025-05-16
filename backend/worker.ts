@@ -9,10 +9,6 @@ import { connectDB, MS_PER_MINUTE } from './config';
 async function bootstrap() {
   await connectDB();
 
-  await fetchQueue.clean(1 * 60 * 60 * 1000, 1000, 'completed');
-  await fetchQueue.clean(24 * 60 * 60 * 1000, 500, 'failed');
-  console.log('🧹 Initial queue cleanup done');
-
   const worker = new Worker(
     'fetchPrice',
     async (job) => {
@@ -57,13 +53,6 @@ async function bootstrap() {
   worker.on('failed', (job, err) => {
     console.error(`❌  Job ${job?.id} failed:`, err);
   });
-
-  // periodic sweep every hour:
-  setInterval(async () => {
-    await fetchQueue.clean(1 * 60 * 60 * 1000, 1000, 'completed');
-    await fetchQueue.clean(24 * 60 * 60 * 1000, 500, 'failed');
-    console.log('🧹 Periodic queue cleanup done');
-  }, 60 * 60 * 1000);
 
   console.log('🐂  BullMQ worker listening for fetchPrice jobs');
 }

@@ -1,6 +1,7 @@
 import {
   AmazonAdapter,
   ChemistWarehouseAdapter,
+  DavidJonesAdapter,
   GenericCheerioAdapter,
   RMWilliamsAdapter,
 } from '../adapters';
@@ -20,6 +21,8 @@ export default async function adapterLoader(adapterId: string) {
         return new ChemistWarehouseAdapter();
       case 'RMWilliams':
         return new RMWilliamsAdapter();
+      case 'DavidJones':
+        return new DavidJonesAdapter();
       default:
         throw new Error(`Unknown builtin adapter: ${doc.name}`);
     }
