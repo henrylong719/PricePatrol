@@ -3,24 +3,28 @@ import { protect, sanitizeInput } from '../middlewares';
 import {
   createWatch,
   getWatches,
-  getWatch,
+  getWatchBySlug,
   updateWatch,
   deleteWatch,
   getPublicWatches,
-} from '../controllers/watch.controller';
+  getPublicWatchBySlug,
+} from '../controllers';
 
 const router = express.Router();
 router.use(sanitizeInput);
+
+// PUBLIC routes (no auth)
+router.get('/public-watches', getPublicWatches);
+router.get('/public-watches/:slug', getPublicWatchBySlug); // ← new
+
+// everything below here requires a logged-in user
 router.use(protect);
 
-// public listing
-router.get('/public-watches', getPublicWatches);
-
 // watch CRUD (slug‐based)
-router.post('/watches', protect, createWatch);
-router.get('/watches', protect, getWatches);
-router.get('/watches/:slug', protect, getWatch);
-router.put('/watches/:slug', protect, updateWatch);
-router.delete('/watches/:slug', protect, deleteWatch);
+router.post('/', createWatch);
+router.get('/', getWatches);
+router.get('/:slug', getWatchBySlug);
+router.put('/:slug', updateWatch);
+router.delete('/:slug', deleteWatch);
 
 export default router;

@@ -52,7 +52,7 @@ const HeaderNav = ({
             </NavDropdown.Item>
             <NavDropdown.Item
               as={Link}
-              to={`/user/products`}
+              to={`/user/watches`}
               className="nav-dropdown-item"
               style={styles.navItemStyles}
             >

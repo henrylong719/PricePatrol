@@ -16,6 +16,8 @@ export interface IWatch extends Document {
   lastNotifiedAt?: Date; // when we last sent an alert
   active: boolean; // allow pause/resume
   isPublic?: boolean;
+  latestPrice?: number | null;
+  latestFetchedAt?: Date | null;
   nextRunAt?: Date;
   createdAt: Date;
   updatedAt: Date;

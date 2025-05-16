@@ -21,20 +21,27 @@ async function bootstrap() {
       }
 
       const scraper = await adapterLoader(watch.adapter.toString());
-
       const { price, imageUrl } = await scraper.extractData(watch.url);
+      const fetchedAt = new Date();
 
-      await PriceLog.create({ watch: watch._id, price });
-      await handlePriceNotification(watch, price);
+      // 1. Save to PriceLog
+      await PriceLog.create({ watch: watch._id, price, fetchedAt });
 
+      // 2. Update Watch with latest price, fetchedAt, imageUrl, nextRunAt
+      watch.latestPrice = price;
+      watch.latestFetchedAt = fetchedAt;
       watch.imageUrl = imageUrl;
       watch.nextRunAt = new Date(
         Date.now() + watch.intervalMinutes * MS_PER_MINUTE
       );
       await watch.save();
 
-      console.log(`✅  Fetched ${watch.url} @ ${price}, updated imageUrl`);
+      // 3. Handle notifications
+      await handlePriceNotification(watch, price);
 
+      console.log(`✅  Fetched ${watch.url} @ ${price}, updated Watch`);
+
+      // 4. Re-schedule next fetch
       await fetchQueue.add(
         'fetchPrice',
         { watchId: watch._id },

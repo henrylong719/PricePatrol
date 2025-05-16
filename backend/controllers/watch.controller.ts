@@ -25,7 +25,6 @@ export const createWatch = asyncHandler(async (req: any, res: Response) => {
     return res.status(404).json({ message: 'Adapter not found' });
   }
 
-  // generate slug up front if you like, or rely on pre('validate') hook
   const slug = slugify(name || url, { lower: true, strict: true });
 
   let watch = await Watch.create({
@@ -38,10 +37,17 @@ export const createWatch = asyncHandler(async (req: any, res: Response) => {
     continuousDrop,
     intervalMinutes,
     isPublic,
+    latestPrice: null,
+    latestFetchedAt: null,
   });
 
   const scraper = await adapterLoader(adapterId);
-  const { imageUrl } = await scraper.extractData(url);
+  const { price, imageUrl } = await scraper.extractData(url);
+  const fetchedAt = new Date();
+
+  // Update initial snapshot
+  watch.latestPrice = price;
+  watch.latestFetchedAt = fetchedAt;
   watch.imageUrl = imageUrl;
   await watch.save();
 
@@ -66,7 +72,7 @@ export const getWatches = asyncHandler(async (req: any, res: Response) => {
 /**
  * GET /api/watches/:slug
  */
-export const getWatch = asyncHandler(async (req: any, res: Response) => {
+export const getWatchBySlug = asyncHandler(async (req: any, res: Response) => {
   const watch = await Watch.findOne({
     slug: req.params.slug,
     user: req.user._id,
@@ -75,16 +81,15 @@ export const getWatch = asyncHandler(async (req: any, res: Response) => {
     return res.status(404).json({ message: 'Watch not found' });
   }
 
-  // fetch latest price
-  const latestLog = await PriceLog.findOne({ watch: watch._id })
+  // grab the full history (or limit it, page it, etc.)
+  const priceHistory = await PriceLog.find({ watch: watch._id })
     .sort({ fetchedAt: -1 })
-    .select('price fetchedAt')
+    .select('price fetchedAt -_id')
     .lean();
 
   res.json({
     ...watch,
-    latestPrice: latestLog?.price ?? null,
-    fetchedAt: latestLog?.fetchedAt ?? null,
+    priceHistory,
   });
 });
 
@@ -164,35 +169,42 @@ export const deleteWatch = asyncHandler(async (req: any, res: Response) => {
  * GET /api/public-watches
  */
 export const getPublicWatches = asyncHandler(async (_req, res: Response) => {
-  const watches = await Watch.aggregate([
-    { $match: { isPublic: true, active: true, archived: false } },
-    {
-      $lookup: {
-        from: 'pricelogs',
-        let: { watchId: '$_id' },
-        pipeline: [
-          { $match: { $expr: { $eq: ['$watch', '$$watchId'] } } },
-          { $sort: { fetchedAt: -1 } },
-          { $limit: 1 },
-        ],
-        as: 'latestLog',
-      },
-    },
-    { $unwind: { path: '$latestLog', preserveNullAndEmptyArrays: true } },
-    {
-      $project: {
-        name: 1,
-        slug: 1,
-        imageUrl: 1,
-        url: 1,
-        targetPrice: 1,
-        latestPrice: '$latestLog.price',
-        fetchedAt: '$latestLog.fetchedAt',
-      },
-    },
-    { $sort: { fetchedAt: -1 } },
-    { $limit: 50 },
-  ]);
+  const watches = await Watch.find({
+    isPublic: true,
+    active: true,
+    archived: false,
+  })
+    .sort({ latestFetchedAt: -1 })
+    .limit(50)
+    .select('name slug imageUrl url targetPrice latestPrice latestFetchedAt');
 
   res.json(watches);
 });
+
+/**
+ * GET /api/public-watches/:slug
+ */
+export const getPublicWatchBySlug = asyncHandler(
+  async (req: Request, res: Response) => {
+    const watch = await Watch.findOne({
+      slug: req.params.slug,
+      isPublic: true,
+      active: true,
+      archived: false,
+    }).lean();
+
+    if (!watch) {
+      return res.status(404).json({ message: 'Watch not found or not public' });
+    }
+
+    const priceHistory = await PriceLog.find({ watch: watch._id })
+      .sort({ fetchedAt: -1 })
+      .select('price fetchedAt -_id')
+      .lean();
+
+    res.json({
+      ...watch,
+      priceHistory,
+    });
+  }
+);

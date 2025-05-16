@@ -82,7 +82,7 @@ const styles = {
     height: '45vh',
   } as CSSProperties,
   brandDescription: {
-    fontSize: '2.2rem',
+    fontSize: '2.4rem',
     textAlign: 'center',
     paddingBottom: '2.1rem',
     color: '#ffffff',

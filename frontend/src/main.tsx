@@ -16,20 +16,23 @@ import HomeScreen from './screens/HomeScreen.tsx';
 import AuthScreen from './screens/AuthScreen.tsx';
 import AuthRoute from './components/AuthRoute.tsx';
 import AdminRoute from './components/AdminRoute.tsx';
+import UserWatchListScreen from './screens/UserWatchListScreen.tsx';
 
 // const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string;
 
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/" element={<App />}>
-      {/* <Route index={true} path="/" element={<HomeScreen />} /> */}
+      <Route index element={<HomeScreen />} />
 
       <Route path="/" element={<HomeScreen />} />
       <Route path="/login" element={<AuthScreen isRegister={false} />} />
       <Route path="/register" element={<AuthScreen isRegister={true} />} />
 
       {/* Signed in users */}
-      <Route path="" element={<AuthRoute />}></Route>
+      <Route path="user" element={<AuthRoute />}>
+        <Route path="watches" element={<UserWatchListScreen />} />
+      </Route>
 
       {/* Admin users */}
       <Route path="" element={<AdminRoute />}></Route>

@@ -2,7 +2,8 @@
 
 import type { IUser } from './user.interface';
 
-export interface IWatch extends Document {
+export interface IWatch {
+  id?: string;
   user: IUser;
   url: string;
   name: string;
@@ -16,6 +17,8 @@ export interface IWatch extends Document {
   active: boolean; // allow pause/resume
   isPublic?: boolean;
   nextRunAt?: Date;
+  latestPrice?: number | null;
+  latestFetchedAt?: string | null;
   createdAt: Date;
   updatedAt: Date;
   archived: boolean;

@@ -22,6 +22,8 @@ const watchSchema = new mongoose.Schema<IWatch>(
     active: { type: Boolean, default: true },
     archived: { type: Boolean, default: false },
     isPublic: { type: Boolean, default: false, index: true },
+    latestPrice: { type: Number, default: null },
+    latestFetchedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
