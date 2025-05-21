@@ -2,8 +2,16 @@ import { Card } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import type { CSSProperties } from 'react';
 import type { IWatch } from '../interfaces';
+import { formatDistanceToNow } from 'date-fns';
+import user_icon from '../assets/user_icon.png';
+import { Image } from 'react-bootstrap';
 
-const Watch = ({ watch }: { watch: IWatch }) => {
+type WatchProps = {
+  watch: IWatch;
+  isLanding?: boolean;
+};
+
+const Watch = ({ watch, isLanding = false }: WatchProps) => {
   return (
     <>
       <Card className="my-2 rounded watch-card" style={styles.productCard}>
@@ -18,6 +26,32 @@ const Watch = ({ watch }: { watch: IWatch }) => {
           `}
         </style>
         <Link to={`/watches/${watch.slug}`} style={styles.linkStyle}>
+          {isLanding && (
+            <Card.Header>
+              <div className="d-flex gap-2">
+                <Image
+                  style={{ height: '50px' }}
+                  src={watch.user.profileImage || user_icon}
+                  alt="background image"
+                  thumbnail
+                  roundedCircle
+                />
+                <div>
+                  <div>
+                    <span style={{ color: '#999999' }}>found by </span>
+                    <span style={{ color: '#555555' }}>
+                      {watch.user.name}
+                    </span>{' '}
+                  </div>
+                  <div style={{ color: '#999999' }}>
+                    {formatDistanceToNow(new Date(watch.createdAt), {
+                      addSuffix: true,
+                    })}
+                  </div>
+                </div>
+              </div>
+            </Card.Header>
+          )}
           <Card.Img
             src={watch.imageUrl}
             variant="top"
@@ -35,12 +69,13 @@ const Watch = ({ watch }: { watch: IWatch }) => {
           <Card.Text style={styles.cardTextPrice} as="h4">
             ${watch.latestPrice}
           </Card.Text>
+
           <Card.Text
             as="div"
             className="d-flex justify-content-between"
             style={styles.cardTextLocation}
           >
-            {/* <div>{watch.location.administrativeAreaLevel1}</div> */}
+            <div>{humanizeAdapterName(watch.adapter.name)}</div>
           </Card.Text>
         </Card.Body>
       </Card>
@@ -58,6 +93,7 @@ const styles = {
     height: '250px',
     objectFit: 'cover',
     objectPosition: 'center',
+    padding: '10px',
   } as CSSProperties,
   cardTitle: {
     fontWeight: 500,
@@ -75,3 +111,8 @@ const styles = {
     textDecoration: 'none',
   } as CSSProperties,
 };
+
+function humanizeAdapterName(name: string): string {
+  if (!name) return '';
+  return name.replace(/(?!^)([A-Z])/g, ' $1');
+}

@@ -57,7 +57,7 @@ const HeaderNav = ({
               style={styles.navItemStyles}
             >
               <FaRegListAlt className="icon" fontSize={'1.2rem'} />
-              My Watches
+              My Watchlist
             </NavDropdown.Item>
             <NavDropdown.Item
               onClick={logoutHandler}

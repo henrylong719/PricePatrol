@@ -79,10 +79,10 @@ const HomeHeader: React.FC = () => {
 
 const styles = {
   header: {
-    height: '45vh',
+    height: '38.5vh',
   } as CSSProperties,
   brandDescription: {
-    fontSize: '2.4rem',
+    fontSize: '2.7rem',
     textAlign: 'center',
     paddingBottom: '2.1rem',
     color: '#ffffff',
@@ -92,7 +92,7 @@ const styles = {
     position: 'relative',
   } as CSSProperties,
   headerImage: {
-    height: '40vh',
+    height: '37vh',
     width: '100vw',
     objectFit: 'cover',
     filter: 'brightness(0.75)',
@@ -101,7 +101,6 @@ const styles = {
     left: 0,
     zIndex: -1,
   } as CSSProperties,
-
   brand: {
     fontSize: '2.3rem',
   } as CSSProperties,

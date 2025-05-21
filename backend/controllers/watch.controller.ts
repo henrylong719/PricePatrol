@@ -65,7 +65,9 @@ export const getWatches = asyncHandler(async (req: any, res: Response) => {
   const watches = await Watch.find({
     user: req.user._id,
     archived: false,
-  }).select('-__v');
+  })
+    .populate({ path: 'adapter', select: 'name' })
+    .select('-__v');
   res.json(watches);
 });
 
@@ -174,9 +176,13 @@ export const getPublicWatches = asyncHandler(async (_req, res: Response) => {
     active: true,
     archived: false,
   })
+    .populate({ path: 'user', select: 'name profileImage' })
+    .populate({ path: 'adapter', select: 'name' })
     .sort({ latestFetchedAt: -1 })
     .limit(50)
-    .select('name slug imageUrl url targetPrice latestPrice latestFetchedAt');
+    .select(
+      'name slug imageUrl url targetPrice latestPrice latestFetchedAt createdAt'
+    );
 
   res.json(watches);
 });

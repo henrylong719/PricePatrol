@@ -1,5 +1,6 @@
 // Watch – what the user is monitoring
 
+import type { IAdapter } from './adapter.interface';
 import type { IUser } from './user.interface';
 
 export interface IWatch {
@@ -9,7 +10,7 @@ export interface IWatch {
   name: string;
   slug: string;
   imageUrl?: string;
-  adapter: string; // ref to an Adapter
+  adapter: Pick<IAdapter, 'name'>; // ref to an Adapter
   targetPrice?: number; // user-set target
   continuousDrop: boolean; // true = alert on any drop
   intervalMinutes: number; // how often to poll

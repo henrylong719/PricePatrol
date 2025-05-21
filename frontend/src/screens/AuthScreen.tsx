@@ -1,10 +1,9 @@
 import React, { useState, useEffect, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Col, Container, Card, Row } from 'react-bootstrap';
+import { Col, Container, Card, Row, Image } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import Loader from '../components/Loader';
-
 import {
   //   useLoginFacebookMutation,
   //   useLoginGoogleMutation,
@@ -13,10 +12,10 @@ import {
 } from '../slices/usersApiSlice';
 import { setCredentials } from '../slices/authSlice';
 import type { IUser } from '../interfaces';
-
 import AuthForm from '../components/AuthForm';
 // import SocialLoginButtons from '../components/SocialLoginButtons';
 // const facebookAppId = import.meta.env.VITE_FACEBOOK_APP_ID as string;
+import PricePatrol_logo from '../assets/PricePatrol_logo.png';
 
 interface AuthScreenProps {
   isRegister?: boolean;
@@ -79,9 +78,16 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ isRegister }) => {
     >
       <Col xs={12} sm={10} md={8} lg={6} xl={5}>
         <Card className="my-2 rounded px-4 pb-5">
-          <div className="px-5">
+          <div className="px-4">
             <div className="text-center">
-              <Link to={'/'}>Price Patrol</Link>
+              <Link to={'/'}>
+                <Image
+                  fluid
+                  src={PricePatrol_logo}
+                  alt="PricePatrol"
+                  width="80%"
+                />
+              </Link>
             </div>
             <h3 className="text-center">
               {isRegister ? 'Sign up' : 'Sign in'}

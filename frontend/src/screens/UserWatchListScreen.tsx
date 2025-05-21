@@ -78,7 +78,26 @@ const UserWatchListScreen = () => {
           </Message>
         ) : (
           <>
-            <Row></Row>
+            <Row>
+              <div className="d-flex justify-content-between align-items-center mt-4">
+                <h3>My Watchlist</h3>
+                <div>
+                  <Button variant="outline-light" style={{ padding: '0.7rem' }}>
+                    <Link
+                      to="/watches/create"
+                      style={{
+                        textDecoration: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                      }}
+                    >
+                      <FaPlus /> Add New Watch
+                    </Link>
+                  </Button>
+                </div>
+              </div>{' '}
+            </Row>
             {renderListings()}
           </>
         )}
