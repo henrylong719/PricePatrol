@@ -7,22 +7,40 @@ import Loader from '../components/Loader';
 import Message from '../components/Message';
 import type { IWatch } from '../interfaces';
 import Watch from '../components/Watch';
+import Breadcrumbs from '../components/Breadcrumbs';
+import Meta from '../components/Meta';
 
 const UserWatchListScreen = () => {
   const navigate = useNavigate();
 
-  const { data = [], isLoading, error } = useGetWatchesQuery();
+  const { data: watches = [], isLoading, error } = useGetWatchesQuery();
 
   const onEditProduct = (id: string) => {
     navigate(`/user/watches/${id}/edit`);
   };
 
+  if (isLoading || !watches)
+    return (
+      <Container className="mt-4">
+        <Loader />;
+      </Container>
+    );
+
+  if (error)
+    return (
+      <Container className="mt-4">
+        <Message variant="danger">
+          {error?.data?.message || error.error}
+        </Message>
+      </Container>
+    );
+
   const renderListings = () => {
     return (
       <>
-        {data && data.length > 0 ? (
+        {watches?.length > 0 ? (
           <Row>
-            {data.map((watch: IWatch) => (
+            {watches.map((watch: IWatch) => (
               <Col key={watch.slug} sm={12} md={6} lg={4} xl={3}>
                 <Dropdown className="d-flex justify-content-end">
                   <Dropdown.Toggle
@@ -50,7 +68,7 @@ const UserWatchListScreen = () => {
             ))}
           </Row>
         ) : (
-          <div className="mt-4">
+          <div className="mt-2">
             <Message variant="light">
               You currently have no waches available
             </Message>
@@ -61,48 +79,33 @@ const UserWatchListScreen = () => {
   };
 
   return (
-    <>
-      <style>
-        {`
-          .dropdown-toggle::after {
-            display: none !important;
-        }
-        `}
-      </style>
-      <Container>
-        {isLoading && data?.length === 0 ? (
-          <Loader />
-        ) : error ? (
-          <Message variant="danger">
-            {error?.data?.message || error.error}
-          </Message>
-        ) : (
-          <>
-            <Row>
-              <div className="d-flex justify-content-between align-items-center mt-4">
-                <h3>My Watchlist</h3>
-                <div>
-                  <Button variant="outline-light" style={{ padding: '0.7rem' }}>
-                    <Link
-                      to="/watches/create"
-                      style={{
-                        textDecoration: 'none',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                      }}
-                    >
-                      <FaPlus /> Add New Watch
-                    </Link>
-                  </Button>
-                </div>
-              </div>{' '}
-            </Row>
-            {renderListings()}
-          </>
-        )}
-      </Container>
-    </>
+    <Container>
+      <Meta />
+      <div className="mt-4">
+        <Breadcrumbs path="watchlist" />
+      </div>
+      <Row>
+        <div className="d-flex justify-content-between align-items-center mt-2">
+          <h3>My Watchlist</h3>
+          <div>
+            <Button variant="outline-light" style={{ padding: '0.7rem' }}>
+              <Link
+                to="/watches/create"
+                style={{
+                  textDecoration: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                }}
+              >
+                <FaPlus /> Add New Watch
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </Row>
+      {renderListings()}
+    </Container>
   );
 };
 
