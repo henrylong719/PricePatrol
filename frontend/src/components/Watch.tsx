@@ -5,6 +5,7 @@ import type { IWatch } from '../interfaces';
 import { formatDistanceToNow } from 'date-fns';
 import user_icon from '../assets/user_icon.png';
 import { Image } from 'react-bootstrap';
+import UserIcon from './UserIcon';
 
 type WatchProps = {
   watch: IWatch;
@@ -29,13 +30,17 @@ const Watch = ({ watch, isLanding = false }: WatchProps) => {
           {isLanding && (
             <Card.Header>
               <div className="d-flex gap-2">
-                <Image
-                  style={{ height: '50px' }}
-                  src={watch.user.profileImage || user_icon}
-                  alt="background image"
-                  thumbnail
-                  roundedCircle
-                />
+                {watch?.user?.profileImage ? (
+                  <Image
+                    style={{ height: '50px' }}
+                    src={watch.user.profileImage}
+                    alt="background image"
+                    thumbnail
+                    roundedCircle
+                  />
+                ) : (
+                  <UserIcon watch={watch} />
+                )}
                 <div>
                   <div>
                     <span style={{ color: '#999999' }}>found by </span>
