@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@dr.pogodin/react-helmet": "^3.0.2",
     "@reduxjs/toolkit": "^2.8.2",
     "@types/lodash": "^4.17.16",
     "@types/react-lottie": "^1.2.10",

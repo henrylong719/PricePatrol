@@ -17,6 +17,8 @@ import AuthScreen from './screens/AuthScreen.tsx';
 import AuthRoute from './components/AuthRoute.tsx';
 import AdminRoute from './components/AdminRoute.tsx';
 import UserWatchListScreen from './screens/UserWatchListScreen.tsx';
+import { HelmetProvider } from '@dr.pogodin/react-helmet';
+import PublicWatchScreen from './screens/PublicWatchScreen.tsx';
 
 // const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string;
 
@@ -28,6 +30,8 @@ const router = createBrowserRouter(
       <Route path="/" element={<HomeScreen />} />
       <Route path="/login" element={<AuthScreen isRegister={false} />} />
       <Route path="/register" element={<AuthScreen isRegister={true} />} />
+
+      <Route path="/watches/:slug" element={<PublicWatchScreen />} />
 
       {/* Signed in users */}
       <Route path="user" element={<AuthRoute />}>
@@ -44,8 +48,10 @@ const router = createBrowserRouter(
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Provider store={store}>
-      <RouterProvider router={router} />
-    </Provider>
+    <HelmetProvider>
+      <Provider store={store}>
+        <RouterProvider router={router} />
+      </Provider>
+    </HelmetProvider>
   </StrictMode>
 );

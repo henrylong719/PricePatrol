@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import type { CSSProperties } from 'react';
 import type { IWatch } from '../interfaces';
 import { formatDistanceToNow } from 'date-fns';
-import user_icon from '../assets/user_icon.png';
 import { Image } from 'react-bootstrap';
 import UserIcon from './UserIcon';
+import { humanizeAdapterName } from '../helpers';
 
 type WatchProps = {
   watch: IWatch;
@@ -116,8 +116,3 @@ const styles = {
     textDecoration: 'none',
   } as CSSProperties,
 };
-
-function humanizeAdapterName(name: string): string {
-  if (!name) return '';
-  return name.replace(/(?!^)([A-Z])/g, ' $1');
-}
