@@ -78,7 +78,11 @@ export const getWatchBySlug = asyncHandler(async (req: any, res: Response) => {
   const watch = await Watch.findOne({
     slug: req.params.slug,
     user: req.user._id,
-  }).lean();
+  })
+    .populate({ path: 'user', select: 'name profileImage' })
+    .populate({ path: 'adapter', select: 'name' })
+    .lean();
+
   if (!watch) {
     return res.status(404).json({ message: 'Watch not found' });
   }
@@ -192,12 +196,17 @@ export const getPublicWatches = asyncHandler(async (_req, res: Response) => {
  */
 export const getPublicWatchBySlug = asyncHandler(
   async (req: Request, res: Response) => {
+    console.log('req.params.slug', req.params.slug);
+
     const watch = await Watch.findOne({
       slug: req.params.slug,
       isPublic: true,
       active: true,
       archived: false,
-    }).lean();
+    })
+      .populate({ path: 'user', select: 'name profileImage' })
+      .populate({ path: 'adapter', select: 'name' })
+      .lean();
 
     if (!watch) {
       return res.status(404).json({ message: 'Watch not found or not public' });
