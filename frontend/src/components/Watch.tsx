@@ -26,7 +26,7 @@ const Watch = ({ watch, isLanding = false }: WatchProps) => {
             }
           `}
         </style>
-        <Link to={`/watches/${watch.slug}`} style={styles.linkStyle}>
+        <Link to={`/watches/${watch.id}`} style={styles.linkStyle}>
           {isLanding && (
             <Card.Header>
               <div className="d-flex gap-2">
@@ -65,7 +65,7 @@ const Watch = ({ watch, isLanding = false }: WatchProps) => {
         </Link>
 
         <Card.Body>
-          <Link to={`/watches/${watch.slug}`} style={styles.linkStyle}>
+          <Link to={`/watches/${watch.id}`} style={styles.linkStyle}>
             <Card.Title as="div" className="watch-title">
               <p style={styles.cardTitle}>{watch.name}</p>
             </Card.Title>

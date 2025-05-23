@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom';
 import Loader from '../components/Loader';
 import Message from '../components/Message';
 import Meta from '../components/Meta';
-import { useGetPublicWatchBySlugQuery } from '../slices/watchesApiSlice';
+import { useGetPublicWatchByIdQuery } from '../slices/watchesApiSlice';
 import { formatDistanceToNow } from 'date-fns';
 import { humanizeAdapterName } from '../helpers';
 import ShareButton from '../components/ShareButton';
@@ -13,13 +13,13 @@ import Breadcrumbs from '../components/Breadcrumbs';
 import BookmarkButton from '../components/BookmarkButton';
 
 const PublicWatchScreen = () => {
-  const { slug } = useParams();
+  const { id } = useParams();
 
   const {
     data: watch,
     isLoading,
     error,
-  } = useGetPublicWatchBySlugQuery({ slug: slug as string });
+  } = useGetPublicWatchByIdQuery({ id: id as string });
 
   const onShareWatch = async () => {
     if (!watch) return;
@@ -56,7 +56,7 @@ const PublicWatchScreen = () => {
       <Container>
         <Meta title={watch.name} />
         <div className="mb-4">
-          <Breadcrumbs path={slug!} />
+          <Breadcrumbs path={id!} />
         </div>
 
         <Row className="mt-4">

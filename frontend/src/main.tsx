@@ -31,7 +31,7 @@ const router = createBrowserRouter(
       <Route path="/login" element={<AuthScreen isRegister={false} />} />
       <Route path="/register" element={<AuthScreen isRegister={true} />} />
 
-      <Route path="/watches/:slug" element={<PublicWatchScreen />} />
+      <Route path="/watches/:id" element={<PublicWatchScreen />} />
 
       {/* Signed in users */}
       <Route path="user" element={<AuthRoute />}>

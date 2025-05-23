@@ -8,9 +8,9 @@ export {
 export {
   createWatch,
   getWatches,
-  getWatchBySlug,
+  getWatchById,
   getPublicWatches,
-  getPublicWatchBySlug,
+  getPublicWatchById,
   updateWatch,
   deleteWatch,
 } from './watch.controller';

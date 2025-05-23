@@ -8,7 +8,6 @@ export interface IWatch {
   user: IUser;
   url: string;
   name: string;
-  slug: string;
   imageUrl?: string;
   adapter: Pick<IAdapter, 'name'>; // ref to an Adapter
   targetPrice?: number; // user-set target

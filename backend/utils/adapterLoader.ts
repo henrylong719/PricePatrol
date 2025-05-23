@@ -1,33 +1,39 @@
 import {
   AmazonAdapter,
+  BuiltinAdapterName,
   ChemistWarehouseAdapter,
   DavidJonesAdapter,
   GenericCheerioAdapter,
   RMWilliamsAdapter,
+  UniqloAdapter,
 } from '../adapters';
+import { BasePlaywrightAdapter } from '../adapters/basePlaywrightAdapter';
 import { Adapter } from '../models';
 
-// Given an Adapter _document ID_, fetch the DB doc and
-// return an instance of the right adapter class.
+/** Map each enum value to its concrete class */
+const BUILTIN_ADAPTERS: Record<
+  BuiltinAdapterName,
+  new () => BasePlaywrightAdapter
+> = {
+  [BuiltinAdapterName.Amazon]: AmazonAdapter,
+  [BuiltinAdapterName.ChemistWarehouse]: ChemistWarehouseAdapter,
+  [BuiltinAdapterName.RMWilliams]: RMWilliamsAdapter,
+  [BuiltinAdapterName.DavidJones]: DavidJonesAdapter,
+  [BuiltinAdapterName.Uniqlo]: UniqloAdapter,
+};
+
 export default async function adapterLoader(adapterId: string) {
   const doc = await Adapter.findById(adapterId);
   if (!doc) throw new Error('Adapter document not found');
 
   if (doc.type === 'builtin') {
-    switch (doc.name) {
-      case 'Amazon':
-        return new AmazonAdapter();
-      case 'ChemistWarehouse':
-        return new ChemistWarehouseAdapter();
-      case 'RMWilliams':
-        return new RMWilliamsAdapter();
-      case 'DavidJones':
-        return new DavidJonesAdapter();
-      default:
-        throw new Error(`Unknown builtin adapter: ${doc.name}`);
+    const AdapterClass = BUILTIN_ADAPTERS[doc.name as BuiltinAdapterName];
+    if (!AdapterClass) {
+      throw new Error(`Unknown builtin adapter: ${doc.name}`);
     }
+    return new AdapterClass();
   }
 
-  // For user-provided selectors, fall back to a generic Cheerio adapter
+  // Custom (user-provided) selector → generic Cheerio adapter
   return new GenericCheerioAdapter(doc.selector!);
 }

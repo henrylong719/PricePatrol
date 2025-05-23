@@ -13,9 +13,9 @@ export const watchesApiSlice = apiSlice.injectEndpoints({
       providesTags: ['Watches'],
     }),
 
-    getPublicWatchBySlug: builder.query<IWatch, { slug: string }>({
-      query: ({ slug }) => ({
-        url: `${WATCHES_URL}/public-watches/${slug}`,
+    getPublicWatchById: builder.query<IWatch, { id: string }>({
+      query: ({ id }) => ({
+        url: `${WATCHES_URL}/public-watches/${id}`,
       }),
       keepUnusedDataFor: 60,
       providesTags: ['Watch'],
@@ -29,9 +29,9 @@ export const watchesApiSlice = apiSlice.injectEndpoints({
       providesTags: ['Watches'],
     }),
 
-    getWatchBySlug: builder.query<IWatch, { slug: string }>({
-      query: ({ slug }) => ({
-        url: `${WATCHES_URL}/${slug}`,
+    getWatchById: builder.query<IWatch, { id: string }>({
+      query: ({ id }) => ({
+        url: `${WATCHES_URL}/${id}`,
       }),
       keepUnusedDataFor: 60,
       providesTags: ['Watch'],
@@ -41,7 +41,7 @@ export const watchesApiSlice = apiSlice.injectEndpoints({
 
     updateWatch: builder.mutation<unknown, Partial<IWatch>>({
       query: (data) => ({
-        url: `${WATCHES_URL}/${data.slug}`,
+        url: `${WATCHES_URL}/${data.id}`,
         method: 'PUT',
         body: data,
       }),
@@ -61,9 +61,9 @@ export const watchesApiSlice = apiSlice.injectEndpoints({
 
 export const {
   useGetPublicWatchesQuery,
-  useGetPublicWatchBySlugQuery,
+  useGetPublicWatchByIdQuery,
   useGetWatchesQuery,
-  useGetWatchBySlugQuery,
+  useGetWatchByIdQuery,
   useCreateWatchMutation,
   useUpdateWatchMutation,
 } = watchesApiSlice;

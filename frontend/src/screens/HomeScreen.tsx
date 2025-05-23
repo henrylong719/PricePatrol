@@ -29,7 +29,7 @@ const HomeScreen: React.FC = () => {
       <Container>
         <Row>
           {data?.map((watch: IWatch) => (
-            <Col key={watch.slug} sm={12} md={6} lg={4} xl={3}>
+            <Col key={watch.id} sm={12} md={6} lg={4} xl={3}>
               <Watch watch={watch} isLanding={true} />
             </Col>
           ))}
