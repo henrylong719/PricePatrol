@@ -4,4 +4,7 @@ export { GenericCheerioAdapter } from './genericCheerioAdapter';
 export { RMWilliamsAdapter } from './rmWilliamsAdapter';
 export { DavidJonesAdapter } from './davidJonesAdapter';
 export { UniqloAdapter } from './uniqloAdapter';
+export { JBHifiAdapter } from './jbHifiAdapeter';
+export { OfficeworksAdapter } from './officeworksAdapter';
+export { TaoBaoAdapter } from './taoBaoAdapter';
 export { BuiltinAdapterName } from './adapterNames';

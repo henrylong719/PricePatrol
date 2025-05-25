@@ -4,4 +4,7 @@ export enum BuiltinAdapterName {
   RMWilliams = 'RMWilliams',
   DavidJones = 'DavidJones',
   Uniqlo = 'Uniqlo',
+  JBHifiAdapter = 'JBHifiAdapter',
+  OfficeworksAdapter = 'OfficeworksAdapter',
+  TaoBaoAdapter = 'TaoBaoAdapter',
 }

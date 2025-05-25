@@ -9,51 +9,58 @@ import adapterLoader from '../utils/adapterLoader';
  *  POST /api/watches
  * ------------------------------------------------------------------ */
 export const createWatch = asyncHandler(async (req: any, res: Response) => {
-  const {
-    name,
-    url,
-    adapter: adapterId,
-    targetPrice,
-    continuousDrop = false,
-    intervalMinutes = DEFAULT_INTERVAL_MINUTES,
-    isPublic = false,
-  } = req.body;
+  try {
+    const {
+      name,
+      url,
+      adapter: adapterId,
+      targetPrice,
+      continuousDrop = false,
+      intervalMinutes = DEFAULT_INTERVAL_MINUTES,
+      isPublic = false,
+    } = req.body;
 
-  const adapterDoc = await Adapter.findById(adapterId);
-  if (!adapterDoc) {
-    return res.status(404).json({ message: 'Adapter not found' });
+    const adapterDoc = await Adapter.findById(adapterId);
+    if (!adapterDoc) {
+      return res.status(404).json({ message: 'Adapter not found' });
+    }
+
+    // 1. create a bare watch (latestPrice/image filled in later)
+    const watch = await Watch.create({
+      user: req.user._id,
+      name,
+      url,
+      adapter: adapterId,
+      targetPrice,
+      continuousDrop,
+      intervalMinutes,
+      isPublic,
+    });
+
+    // 2. run first scrape immediately
+    const scraper = await adapterLoader(adapterId);
+    const { price, imageUrl } = await scraper.extractData(url);
+
+    watch.latestPrice = price;
+    watch.latestFetchedAt = new Date();
+    watch.imageUrl = imageUrl;
+    await watch.save();
+
+    // 3. schedule next run
+    const delay = intervalMinutes * MS_PER_MINUTE;
+    await fetchQueue.add(
+      'fetchPrice',
+      { watchId: watch._id },
+      { delay, jobId: String(watch._id) }
+    );
+
+    res.status(201).json(watch);
+  } catch (err: any) {
+    if (err.code === 11000) {
+      return res.status(409).json({ message: 'Watch already exists' });
+    }
+    throw err; // re-throw others
   }
-
-  // 1. create a bare watch (latestPrice/image filled in later)
-  const watch = await Watch.create({
-    user: req.user._id,
-    name,
-    url,
-    adapter: adapterId,
-    targetPrice,
-    continuousDrop,
-    intervalMinutes,
-    isPublic,
-  });
-
-  // 2. run first scrape immediately
-  const scraper = await adapterLoader(adapterId);
-  const { price, imageUrl } = await scraper.extractData(url);
-
-  watch.latestPrice = price;
-  watch.latestFetchedAt = new Date();
-  watch.imageUrl = imageUrl;
-  await watch.save();
-
-  // 3. schedule next run
-  const delay = intervalMinutes * MS_PER_MINUTE;
-  await fetchQueue.add(
-    'fetchPrice',
-    { watchId: watch._id },
-    { delay, jobId: String(watch._id) }
-  );
-
-  res.status(201).json(watch);
 });
 
 /* ------------------------------------------------------------------ *

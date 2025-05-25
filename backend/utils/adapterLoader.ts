@@ -4,7 +4,10 @@ import {
   ChemistWarehouseAdapter,
   DavidJonesAdapter,
   GenericCheerioAdapter,
+  JBHifiAdapter,
+  OfficeworksAdapter,
   RMWilliamsAdapter,
+  TaoBaoAdapter,
   UniqloAdapter,
 } from '../adapters';
 import { BasePlaywrightAdapter } from '../adapters/basePlaywrightAdapter';
@@ -20,6 +23,9 @@ const BUILTIN_ADAPTERS: Record<
   [BuiltinAdapterName.RMWilliams]: RMWilliamsAdapter,
   [BuiltinAdapterName.DavidJones]: DavidJonesAdapter,
   [BuiltinAdapterName.Uniqlo]: UniqloAdapter,
+  [BuiltinAdapterName.JBHifiAdapter]: JBHifiAdapter,
+  [BuiltinAdapterName.OfficeworksAdapter]: OfficeworksAdapter,
+  [BuiltinAdapterName.TaoBaoAdapter]: TaoBaoAdapter,
 };
 
 export default async function adapterLoader(adapterId: string) {
