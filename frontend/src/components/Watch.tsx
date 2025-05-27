@@ -13,6 +13,7 @@ type WatchProps = {
 };
 
 const Watch = ({ watch, isLanding = false }: WatchProps) => {
+  console.log(watch);
   return (
     <>
       <Card className="my-2 rounded watch-card" style={styles.productCard}>
@@ -26,7 +27,7 @@ const Watch = ({ watch, isLanding = false }: WatchProps) => {
             }
           `}
         </style>
-        <Link to={`/watches/${watch.id}`} style={styles.linkStyle}>
+        <Link to={`/watches/${watch._id}`} style={styles.linkStyle}>
           {isLanding && (
             <Card.Header>
               <div className="d-flex gap-2">
@@ -65,7 +66,7 @@ const Watch = ({ watch, isLanding = false }: WatchProps) => {
         </Link>
 
         <Card.Body>
-          <Link to={`/watches/${watch.id}`} style={styles.linkStyle}>
+          <Link to={`/watches/${watch._id}`} style={styles.linkStyle}>
             <Card.Title as="div" className="watch-title">
               <p style={styles.cardTitle}>{watch.name}</p>
             </Card.Title>

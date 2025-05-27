@@ -1,5 +1,5 @@
 import { WATCHES_URL } from '../constants';
-import type { IWatch } from '../interfaces';
+import type { IWatch, PricePoint, PriceRange } from '../interfaces';
 import { apiSlice } from './apiSlice';
 
 export const watchesApiSlice = apiSlice.injectEndpoints({
@@ -37,11 +37,25 @@ export const watchesApiSlice = apiSlice.injectEndpoints({
       providesTags: ['Watch'],
     }),
 
+    getPriceHistory: builder.query<
+      PricePoint[],
+      { id: string; range?: PriceRange; public?: boolean }
+    >({
+      query: ({ id, range = '3m', public: isPublic = false }) => ({
+        url: isPublic
+          ? `${WATCHES_URL}/public-watches/${id}/history`
+          : `${WATCHES_URL}/${id}/history`,
+        params: { range },
+      }),
+      keepUnusedDataFor: 30,
+      providesTags: ['Watch'],
+    }),
+
     /************ Mutations *************/
 
     updateWatch: builder.mutation<unknown, Partial<IWatch>>({
       query: (data) => ({
-        url: `${WATCHES_URL}/${data.id}`,
+        url: `${WATCHES_URL}/${data._id}`,
         method: 'PUT',
         body: data,
       }),
@@ -64,6 +78,7 @@ export const {
   useGetPublicWatchByIdQuery,
   useGetWatchesQuery,
   useGetWatchByIdQuery,
+  useGetPriceHistoryQuery,
   useCreateWatchMutation,
   useUpdateWatchMutation,
 } = watchesApiSlice;

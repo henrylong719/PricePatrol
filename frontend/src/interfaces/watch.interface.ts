@@ -4,7 +4,7 @@ import type { IAdapter } from './adapter.interface';
 import type { IUser } from './user.interface';
 
 export interface IWatch {
-  id?: string;
+  _id?: string;
   user: IUser;
   url: string;
   name: string;

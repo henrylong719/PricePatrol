@@ -11,6 +11,7 @@ import ShareButton from '../components/ShareButton';
 import { toast } from 'react-toastify';
 import Breadcrumbs from '../components/Breadcrumbs';
 import BookmarkButton from '../components/BookmarkButton';
+import PriceHistory from '../components/PriceHistory';
 
 const PublicWatchScreen = () => {
   const { id } = useParams();
@@ -20,6 +21,8 @@ const PublicWatchScreen = () => {
     isLoading,
     error,
   } = useGetPublicWatchByIdQuery({ id: id as string });
+
+  console.log(watch);
 
   const onShareWatch = async () => {
     if (!watch) return;
@@ -116,7 +119,9 @@ const PublicWatchScreen = () => {
         </Row>
 
         <Row>
-          <Card className="my-2">statistic</Card>
+          <Card className="my-2">
+            <PriceHistory watchId={id as string} />
+          </Card>
         </Row>
       </Container>
     </Container>
