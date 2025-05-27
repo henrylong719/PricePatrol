@@ -41,7 +41,7 @@ const UserWatchListScreen = () => {
         {watches?.length > 0 ? (
           <Row>
             {watches.map((watch: IWatch) => (
-              <Col key={watch.id} sm={12} md={6} lg={4} xl={3}>
+              <Col key={watch._id} sm={12} md={6} lg={4} xl={3}>
                 <Dropdown className="d-flex justify-content-end">
                   <Dropdown.Toggle
                     variant="transparent"
@@ -57,7 +57,7 @@ const UserWatchListScreen = () => {
                   </Dropdown.Toggle>
                   <Dropdown.Menu>
                     <Dropdown.Item
-                      onClick={() => onEditProduct(watch.id as string)}
+                      onClick={() => onEditProduct(watch._id as string)}
                     >
                       Edit
                     </Dropdown.Item>

@@ -22,8 +22,6 @@ const PublicWatchScreen = () => {
     error,
   } = useGetPublicWatchByIdQuery({ id: id as string });
 
-  console.log(watch);
-
   const onShareWatch = async () => {
     if (!watch) return;
 
@@ -59,7 +57,7 @@ const PublicWatchScreen = () => {
       <Container>
         <Meta title={watch.name} />
         <div className="mb-4">
-          <Breadcrumbs path={id!} />
+          <Breadcrumbs path={watch.name} />
         </div>
 
         <Row className="mt-4">
