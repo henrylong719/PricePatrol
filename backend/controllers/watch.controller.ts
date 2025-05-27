@@ -4,6 +4,7 @@ import { Adapter, PriceLog, Watch } from '../models';
 import { fetchQueue } from '../config/redis';
 import { DEFAULT_INTERVAL_MINUTES, MS_PER_MINUTE } from '../config';
 import adapterLoader from '../utils/adapterLoader';
+import { subMonths } from 'date-fns/subMonths';
 
 /* ------------------------------------------------------------------ *
  *  POST /api/watches
@@ -93,12 +94,63 @@ export const getWatchById = asyncHandler(async (req: any, res: Response) => {
     return res.status(404).json({ message: 'Watch not found' });
   }
 
-  const priceHistory = await PriceLog.find({ watch: watch._id })
-    .sort({ fetchedAt: -1 })
+  res.json({ ...watch });
+});
+
+/**
+ * GET /.../:id/history?range=3m|6m|1y|all
+ * - Public route: only returns if watch.isPublic===true
+ * - Private route: returns if watch.user===req.user._id
+ */
+export const getPriceHistory = asyncHandler(async (req: any, res: Response) => {
+  const { range = '3m' } = req.query as { range?: string };
+  const rangeMap: Record<string, number | null> = {
+    '3m': 3,
+    '6m': 6,
+    '1y': 12,
+    '2y': 24,
+    all: null,
+  };
+  if (!Object.prototype.hasOwnProperty.call(rangeMap, range)) {
+    return res.status(400).json({ message: 'Invalid range param' });
+  }
+
+  // 1) make sure the watch exists & you’re allowed to see it
+  const watch = await Watch.findById(req.params.id).select(
+    'user isPublic archived'
+  );
+  if (!watch || watch.archived) {
+    return res.status(404).json({ message: 'Watch not found' });
+  }
+  // If it’s not public, require ownership
+  if (!watch.isPublic) {
+    // protect middleware ensures req.user exists here; in public route req.user is undefined
+    if (!req.user || !watch.user.equals(req.user._id)) {
+      return res
+        .status(403)
+        .json({ message: 'Not authorized to view this history' });
+    }
+  }
+
+  // 2) build the price‐log query
+  const months = rangeMap[range]!;
+  const match: any = { watch: watch._id };
+  if (months) {
+    match.fetchedAt = { $gte: subMonths(new Date(), months) };
+  }
+
+  const logs = await PriceLog.find(match)
+    .sort({ fetchedAt: 1 })
     .select('price fetchedAt -_id')
     .lean();
 
-  res.json({ ...watch, priceHistory });
+  // 3) shape for the chart
+  const history = logs.map((l) => ({
+    date: l.fetchedAt.toISOString(),
+    price: l.price,
+  }));
+
+  res.json(history);
 });
 
 /* ------------------------------------------------------------------ *
@@ -208,11 +260,6 @@ export const getPublicWatchById = asyncHandler(
       return res.status(404).json({ message: 'Watch not found or not public' });
     }
 
-    const priceHistory = await PriceLog.find({ watch: watch._id })
-      .sort({ fetchedAt: -1 })
-      .select('price fetchedAt -_id')
-      .lean();
-
-    res.json({ ...watch, priceHistory });
+    res.json({ ...watch });
   }
 );
