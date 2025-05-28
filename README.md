@@ -2,6 +2,8 @@
 
 PricePatrol is a universal, modular price-watch service that lets you monitor product pages across multiple retailers and notifies you the moment prices hit your targets—or keeps pinging you as they continue to fall.
 
+## 🚀 Key Features
+
 - **Flexible Scheduling & Queues**  
   - BullMQ + Redis for high-performance, repeatable fetch jobs  
   - Cron-style orchestration (via BullMQ)  
